@@ -1,15 +1,14 @@
 {
-  "name": "marcelog/pami",
+  "name": "ryzhov/pami",
   "type": "library",
-  "description": "Asterisk Manager Interface (AMI) client for PHP, event driven, object oriented",
+  "description": "FORKED FROM marcelog/pami Asterisk Manager Interface (AMI) client for PHP",
   "keywords": ["asterisk","ami","client","telephony","voip","event","action","manager","monitor"],
-  "homepage": "http://marcelog.github.com/PAMI",
+  "homepage": "https://github.com/ryzhov/PAMI",
   "license": "Apache2",
   "authors": [
     {
-      "name": "Marcelo Gornstein",
-      "email": "marcelog@gmail.com",
-      "homepage": "http://marcelog.github.com/",
+      "name": "Aleksandr N. Ryzhov",
+      "email": "a.n.ryzhov@gmail.com",
       "role": "Developer"
     }
   ],
