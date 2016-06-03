@@ -1,42 +1,13 @@
 <?php
 declare(ticks=1);
-/**
- * TCP Client implementation for AMI.
- *
- * PHP Version 5
- *
- * @category   Pami
- * @package    Client
- * @subpackage Impl
- * @author     Marcelo Gornstein <marcelog@gmail.com>
- * @license    http://marcelog.github.com/PAMI/ Apache License 2.0
- * @version    SVN: $Id$
- * @link       http://marcelog.github.com/PAMI/
- *
- * Copyright 2011 Marcelo Gornstein <marcelog@gmail.com>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+
 namespace PAMI\Client\Impl;
 
 use PAMI\Message\OutgoingMessage;
 use PAMI\Message\Message;
 use PAMI\Message\IncomingMessage;
 use PAMI\Message\Action\LoginAction;
-use PAMI\Message\Action\LogoffAction;
 use PAMI\Message\Response\ResponseMessage;
-use PAMI\Message\Event\EventMessage;
 use PAMI\Message\Event\Factory\Impl\EventFactoryImpl;
 use PAMI\Listener\IEventListener;
 use PAMI\Client\Exception\ClientException;
@@ -53,8 +24,6 @@ use Psr\Log\NullLogger;
  * @package    Client
  * @subpackage Impl
  * @author     Marcelo Gornstein <marcelog@gmail.com>
- * @license    http://marcelog.github.com/PAMI/ Apache License 2.0
- * @link       http://marcelog.github.com/PAMI/
  */
 class ClientImpl implements IClient
 {
@@ -441,6 +410,26 @@ class ClientImpl implements IClient
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
+    }
+
+    /**
+     * Gets the logger.
+     *
+     * @return Psr\Log\LoggerInterface $logger The PSR3-Logger
+     */
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+
+    /**
+     * Gets the sockekt.
+     *
+     * @return resource
+     */
+    public function getSocket()
+    {
+        return $this->socket;
     }
 
     /**
