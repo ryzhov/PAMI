@@ -1,13 +1,3 @@
-[![License](https://poser.pugx.org/marcelog/PAMI/license)](https://packagist.org/packages/marcelog/PAMI)
-[![Latest Stable Version](https://poser.pugx.org/marcelog/PAMI/v/stable)](https://packagist.org/packages/marcelog/PAMI)
-[![Documentation Status](https://readthedocs.org/projects/pami/badge/?version=latest)](http://pami.readthedocs.org/en/latest/?badge=latest)
-
-[![Build Status](https://travis-ci.org/marcelog/PAMI.svg)](https://travis-ci.org/marcelog/PAMI)
-[![Coverage Status](https://coveralls.io/repos/marcelog/PAMI/badge.svg?branch=master&service=github)](https://coveralls.io/github/marcelog/PAMI?branch=master)
-[![Code Climate](https://codeclimate.com/github/marcelog/PAMI/badges/gpa.svg)](https://codeclimate.com/github/marcelog/PAMI)
-[![Issue Count](https://codeclimate.com/github/marcelog/PAMI/badges/issue_count.svg)](https://codeclimate.com/github/marcelog/PAMI)
-
-[![Click here to lend your support to: PAMI and make a donation at pledgie.com !](https://pledgie.com/campaigns/30944.png?skin_name=chrome' border='0')](https://pledgie.com/campaigns/30944)
 
 # Introduction
 
@@ -275,7 +265,6 @@ can still catch them. If you catch one of these, please report it!
 * VoicemailUsersList
 
 
-
 ## Debugging, logging
 
 You can optionally set a [PSR-3](http://www.php-fig.org/psr/psr-3/) compatible logger:
@@ -299,34 +288,6 @@ To run a task, just do:
 ```sh
 vendor/bin/phing build
 ```
-
-## Contributing
-To contribute:
- * Make sure you open a **concise** and **short** pull request.
- * Throw in any needed unit tests to accomodate the new code or the
- changes involved.
- * Run `phing` and make sure everything is ok before submitting the pull
- request (make phpmd and CodeSniffer happy, also make sure that phpDocumentor
- does not throw any warnings, since all our documentation is automatically
- generated).
- * Your code must comply with [PSR-2](http://www.php-fig.org/psr/psr-2/),
- CodeSniffer should take care of that.
-
-LICENSE
-=======
-Copyright 2016 Marcelo Gornstein <marcelog@gmail.com>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
 
 # Thanks To
 
