@@ -119,6 +119,12 @@ class ClientImpl implements IClient
      */
     private $lastActionId;
 
+
+    private function getSocketUri()
+    {
+        return sprintf('%s%s:%s', $this->scheme, $this->host, $this->port);
+    }
+
     /**
      * Opens a tcp connection to ami.
      *
@@ -127,12 +133,11 @@ class ClientImpl implements IClient
      */
     public function open()
     {
-        $cString = $this->scheme . $this->host . ':' . $this->port;
         $this->context = stream_context_create();
         $errno = 0;
         $errstr = '';
         $this->socket = @stream_socket_client(
-            $cString,
+            $this->getSocketUri(),
             $errno,
             $errstr,
             $this->cTimeout,
@@ -203,9 +208,15 @@ class ClientImpl implements IClient
         $msgs = array();
         // Read something.
         $read = @fread($this->socket, 65535);
-        if ($read === false || @feof($this->socket)) {
-            throw new ClientException('Error reading');
+        
+        if ($read === false) {
+            throw new ClientException(sprintf('Error fread socket: "%s"', $this->getSocketUri()));
         }
+
+        if (@feof($this->socket)) {
+            throw new ClientException(sprintf('EOF on socket: "%s"', $this->getSocketUri()));
+        }
+        
         $this->currentProcessingMessage .= $read;
         // If we have a complete message, then return it. Save the rest for
         // later.
