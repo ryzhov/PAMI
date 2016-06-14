@@ -214,7 +214,7 @@ class ClientImpl implements IClient
         }
 
         if (@feof($this->socket)) {
-            throw new ClientException(sprintf('EOF on socket: "%s"', $this->getSocketUri()));
+            $this->logger->debug(sprintf('EOF on socket: "%s"', $this->getSocketUri()));
         }
         
         $this->currentProcessingMessage .= $read;
