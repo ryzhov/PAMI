@@ -39,7 +39,7 @@ namespace PAMI\Message;
  * @license  http://marcelog.github.com/PAMI/ Apache License 2.0
  * @link     http://marcelog.github.com/PAMI/
  */
-abstract class IncomingMessage extends Message
+abstract class IncomingMessage extends AbstractMessage
 {
     /**
      * Holds original message.
@@ -65,6 +65,11 @@ abstract class IncomingMessage extends Message
         return $ret;
     }
 
+    protected function getMessageKeys()
+    {
+        return [];
+    }
+    
     /**
      * Returns key 'EventList'. In respones, this will surely be a "start". In
      * events, should be a "complete".

@@ -136,6 +136,7 @@ class ClientImpl implements IClient
         $this->context = stream_context_create();
         $errno = 0;
         $errstr = '';
+        
         $this->socket = @stream_socket_client(
             $this->getSocketUri(),
             $errno,
@@ -144,9 +145,11 @@ class ClientImpl implements IClient
             STREAM_CLIENT_CONNECT,
             $this->context
         );
+        
         if ($this->socket === false) {
-            throw new ClientException('Error connecting to ami: ' . $errstr);
+            throw new ClientException(sprintf('Error: "%s" while connecting to: "%s"', $errstr, $this->getSocketUri()));
         }
+        
         $msg = new LoginAction($this->user, $this->pass);
         $asteriskId = @stream_get_line($this->socket, 1024, Message::EOL);
         if (strstr($asteriskId, 'Asterisk') === false) {
@@ -154,13 +157,16 @@ class ClientImpl implements IClient
                 "Unknown peer. Is this an ami?: $asteriskId"
             );
         }
+
         $response = $this->send($msg);
         if (!$response->isSuccess()) {
             throw new ClientException(
                 'Could not connect: ' . $response->getMessage()
             );
         }
+        
         @stream_set_blocking($this->socket, 0);
+        
         $this->currentProcessingMessage = '';
         $this->logger->debug('Logged in successfully to ami.');
     }
@@ -214,7 +220,9 @@ class ClientImpl implements IClient
         }
 
         if (@feof($this->socket)) {
-            $this->logger->debug(sprintf('EOF on socket: "%s"', $this->getSocketUri()));
+            $message = sprintf('EOF on socket: "%s"', $this->getSocketUri());
+            $this->logger->warning($message);
+            throw new ClientException($message);
         }
         
         $this->currentProcessingMessage .= $read;
