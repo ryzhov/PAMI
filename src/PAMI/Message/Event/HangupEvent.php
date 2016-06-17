@@ -45,6 +45,16 @@ use PAMI\Message\Event\EventMessage;
  */
 class HangupEvent extends EventMessage
 {
+    
+    protected function getMessageKeys()
+    {
+        return
+            [
+                'timestamp'
+            ]
+        ;
+    }
+
     /**
      * Returns key: 'Privilege'.
      *

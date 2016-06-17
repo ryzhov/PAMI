@@ -18,14 +18,16 @@ class DialEndEvent extends EventMessage
     {
         return
             [
+                'timestamp',
                 'privilege',
                 'channel',
                 'calleridnum',
+                'calleridname',
                 'accountcode',
                 'uniqueid',
                 'destchannel',
                 'destuniqueid',
-                'dialstring'
+                'dialstatus'
             ]
         ;
     }

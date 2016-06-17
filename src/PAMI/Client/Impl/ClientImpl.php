@@ -168,7 +168,7 @@ class ClientImpl implements IClient
         @stream_set_blocking($this->socket, 0);
         
         $this->currentProcessingMessage = '';
-        $this->logger->debug('Logged in successfully to ami.');
+        $this->logger->debug(sprintf('Login to: "%s" by user: "%s"', $this->getSocketUri(), $this->user));
     }
 
     /**
@@ -247,10 +247,10 @@ class ClientImpl implements IClient
     public function process()
     {
         $msgs = $this->getMessages();
+        
         foreach ($msgs as $aMsg) {
-            $this->logger->debug(
-                '------ Received: ------ ' . "\n" . $aMsg . "\n\n"
-            );
+            $this->logger->debug(sprintf('recv <-- {%s}', $aMsg));
+            
             $resPos = strpos($aMsg, 'Response:');
             $evePos = strpos($aMsg, 'Event:');
             if (($resPos !== false) &&
@@ -275,7 +275,6 @@ class ClientImpl implements IClient
                 $response = $this->findResponse($event);
                 $response->addEvent($event);
             }
-            $this->logger->debug('----------------');
         }
     }
 
@@ -347,7 +346,11 @@ class ClientImpl implements IClient
      */
     private function messageToEvent($msg)
     {
-        return $this->eventFactory->createFromRaw($msg);
+        $event = $this->eventFactory->createFromRaw($msg);
+
+        $this->getLogger()->debug(sprintf('Event CLASS: "%s"', get_class($event)));
+
+        return $event;
     }
 
     /**
@@ -385,14 +388,16 @@ class ClientImpl implements IClient
     {
         $messageToSend = $message->serialize();
         $length = strlen($messageToSend);
-        $this->logger->debug(
-            '------ Sending: ------ ' . "\n" . $messageToSend . '----------'
-        );
+        
+        $this->logger->debug(sprintf('send --> {%s}',$messageToSend));
         $this->lastActionId = $message->getActionId();
+        
         if (@fwrite($this->socket, $messageToSend) < $length) {
             throw new ClientException('Could not send message');
         }
+        
         $read = 0;
+        
         while ($read <= $this->rTimeout) {
             $this->process();
             $response = $this->getRelated($message);

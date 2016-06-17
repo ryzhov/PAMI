@@ -18,11 +18,15 @@ class DialBeginEvent extends EventMessage
     {
         return
             [
+                'timestamp',
                 'privilege',
                 'channel',
                 'calleridnum',
+                'calleridname',
+                'context',
                 'accountcode',
                 'uniqueid',
+                'linkedid',
                 'destchannel',
                 'destuniqueid',
                 'dialstring'
