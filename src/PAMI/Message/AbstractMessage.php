@@ -14,10 +14,8 @@
 namespace PAMI\Message;
 use PAMI\Exception\PAMIException;
 
-abstract class AbstractMessage extends Message
+abstract class AbstractMessage extends Message implements MessageKeysAware
 {
-
-    abstract protected static function getMessageKeys();
 
     public function __call($name, $args)
     {

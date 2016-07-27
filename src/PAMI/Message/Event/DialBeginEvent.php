@@ -14,7 +14,7 @@ use PAMI\Message\Event\EventMessage;
 
 class DialBeginEvent extends EventMessage
 {
-    protected static function getMessageKeys()
+    public static function getMessageKeys()
     {
         return array_merge(
             parent::getMessageKeys(),
