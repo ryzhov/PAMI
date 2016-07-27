@@ -17,7 +17,7 @@ use PAMI\Exception\PAMIException;
 abstract class AbstractMessage extends Message
 {
 
-    abstract protected function getMessageKeys();
+    abstract protected static function getMessageKeys();
 
     public function __call($name, $args)
     {
@@ -25,7 +25,7 @@ abstract class AbstractMessage extends Message
             throw new PAMIException(sprintf('unexpected method name "%s"', $name));
         }
         
-        if (!in_array($key = strtolower($matches[2]), $this->getMessageKeys())) {
+        if (!in_array($key = strtolower($matches[2]), static::getMessageKeys())) {
             throw new PAMIException(sprintf('unsupported key "%s" for message class "%s"', $key, get_class($this)));
         }
 

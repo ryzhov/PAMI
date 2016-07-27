@@ -14,11 +14,11 @@ use PAMI\Message\Event\EventMessage;
 
 class DialBeginEvent extends EventMessage
 {
-    protected function getMessageKeys()
+    protected static function getMessageKeys()
     {
-        return
+        return array_merge(
+            parent::getMessageKeys(),
             [
-                'timestamp',
                 'privilege',
                 'channel',
                 'calleridnum',
@@ -31,6 +31,6 @@ class DialBeginEvent extends EventMessage
                 'destuniqueid',
                 'dialstring'
             ]
-        ;
+        );
     }
 }

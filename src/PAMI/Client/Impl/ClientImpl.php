@@ -348,7 +348,9 @@ class ClientImpl implements IClient
     {
         $event = $this->eventFactory->createFromRaw($msg);
 
-        $this->getLogger()->debug(sprintf('Event CLASS: "%s"', get_class($event)));
+        $this->getLogger()->debug(
+            sprintf('Event class: "%s", Timestamp: "%s"', get_class($event), $event->getTimestamp())
+        );
 
         return $event;
     }

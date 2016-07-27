@@ -65,9 +65,9 @@ abstract class IncomingMessage extends AbstractMessage
         return $ret;
     }
 
-    protected function getMessageKeys()
+    protected static function getMessageKeys()
     {
-        return [];
+        return ['timestamp'];
     }
     
     /**
