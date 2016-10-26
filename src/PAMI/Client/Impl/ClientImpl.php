@@ -1,4 +1,13 @@
 <?php
+/**
+ * TCP Client implementation for AMI.
+ *
+ * @author     Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
+ * @author     Marcelo Gornstein <marcelog@gmail.com>
+ * @link       https://github.com/ryzhov/PAMI
+ * 
+ */
+
 declare(ticks=1);
 
 namespace PAMI\Client\Impl;
@@ -15,16 +24,6 @@ use PAMI\Client\IClient;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-/**
- * TCP Client implementation for AMI.
- *
- * PHP Version 5
- *
- * @category   Pami
- * @package    Client
- * @subpackage Impl
- * @author     Marcelo Gornstein <marcelog@gmail.com>
- */
 class ClientImpl implements IClient
 {
     /**
@@ -249,29 +248,45 @@ class ClientImpl implements IClient
         $msgs = $this->getMessages();
         
         foreach ($msgs as $aMsg) {
-            $this->logger->debug(sprintf('recv <-- {%s}', $aMsg));
-            
             $resPos = strpos($aMsg, 'Response:');
             $evePos = strpos($aMsg, 'Event:');
-            if (($resPos !== false) &&
-              (($resPos < $evePos) || $evePos === false)
-            ) {
+
+            if (($resPos !== false) && (($resPos < $evePos) || $evePos === false)) {
+                
                 $response = $this->messageToResponse($aMsg);
+                
+                $this->getLogger()->debug(
+                    sprintf('recv <-- class: "%s": "%s"', get_class($response), $response)
+                );
+                
                 $this->incomingQueue[$response->getActionId()] = $response;
+                
             } elseif ($evePos !== false) {
+                
                 $event = $this->messageToEvent($aMsg);
+                
+                $this->getLogger()->debug(
+                    sprintf('recv <-- class: "%s": "%s"', get_class($event), $event)
+                );
+
                 $response = $this->findResponse($event);
                 if ($response === false || $response->isComplete()) {
                     $this->dispatch($event);
                 } else {
                     $response->addEvent($event);
                 }
+                
             } else {
                 // broken ami.. sending a response with events without
                 // Event and ActionId
                 $bMsg = 'Event: ResponseEvent' . "\r\n";
                 $bMsg .= 'ActionId: ' . $this->lastActionId . "\r\n" . $aMsg;
                 $event = $this->messageToEvent($bMsg);
+                
+                $this->getLogger()->error(
+                    sprintf('broken recv <-- raw: "%s"', $aMsg)
+                );
+                
                 $response = $this->findResponse($event);
                 $response->addEvent($event);
             }
@@ -348,9 +363,6 @@ class ClientImpl implements IClient
     {
         $event = $this->eventFactory->createFromRaw($msg);
 
-        $this->getLogger()->debug(
-            sprintf('Event class: "%s", Timestamp: "%s"', get_class($event), $event->getTimestamp())
-        );
 
         return $event;
     }
@@ -388,10 +400,11 @@ class ClientImpl implements IClient
      */
     public function send(OutgoingMessage $message)
     {
+        $this->logger->debug(sprintf('send --> class: "%s": "%s"', get_class($message), $message));
+        
         $messageToSend = $message->serialize();
         $length = strlen($messageToSend);
         
-        $this->logger->debug(sprintf('send --> {%s}',$messageToSend));
         $this->lastActionId = $message->getActionId();
         
         if (@fwrite($this->socket, $messageToSend) < $length) {
@@ -474,9 +487,9 @@ class ClientImpl implements IClient
         $this->cTimeout = $options['connect_timeout'];
         $this->rTimeout = $options['read_timeout'];
         $this->scheme = isset($options['scheme']) ? $options['scheme'] : 'tcp://';
-        $this->eventListeners = array();
         $this->eventFactory = new EventFactoryImpl();
-        $this->incomingQueue = array();
+        $this->incomingQueue = [];
+        $this->eventListeners = [];
         $this->lastActionId = false;
     }
 }

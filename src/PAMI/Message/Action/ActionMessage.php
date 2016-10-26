@@ -2,60 +2,44 @@
 /**
  * A generic action ami message.
  *
- * PHP Version 5
- *
- * @category Pami
- * @package  Message
- * @author   Marcelo Gornstein <marcelog@gmail.com>
- * @license  http://marcelog.github.com/PAMI/ Apache License 2.0
- * @version  SVN: $Id$
- * @link     http://marcelog.github.com/PAMI/
- *
- * Copyright 2011 Marcelo Gornstein <marcelog@gmail.com>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * @author     Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
+ * @author     Marcelo Gornstein <marcelog@gmail.com>
+ * @link       https://github.com/ryzhov/PAMI
+ * 
  */
+
 namespace PAMI\Message\Action;
 
-use PAMI\Message\OutgoingMessage;
 use PAMI\Exception\PAMIException;
+use PAMI\Message\OutgoingMessage;
 
-/**
- * A generic action ami message.
- *
- * PHP Version 5
- *
- * @category Pami
- * @package  Message
- * @author   Marcelo Gornstein <marcelog@gmail.com>
- * @license  http://marcelog.github.com/PAMI/ Apache License 2.0
- * @link     http://marcelog.github.com/PAMI/
- */
 abstract class ActionMessage extends OutgoingMessage
 {
+    public static function getMessageKeys()
+    {
+        return ['action', 'actionid'];
+    }
+
     /**
      * Constructor.
      *
-     * @param string $what Action command.
+     * @param string $action Action command.
      *
      * @return void
      */
-    public function __construct($what)
+    public function __construct()
     {
         parent::__construct();
-        $this->setKey('Action', $what);
-        $this->setKey('ActionID', microtime(true));
+
+        $action = (new \ReflectionClass(get_class($this)))->getShortName();
+
+        if (preg_match('/([\S]+)Action$/', $action, $matches)) {
+            $this->setAction($matches[1]);
+        } else {
+            throw new \RuntimeException(sprintf('AMI Action invalid class: "%s"', get_class($this)));
+        }
+        
+        $this->setActionID(microtime(true));
     }
 
     /**
