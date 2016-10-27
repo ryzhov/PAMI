@@ -22,15 +22,16 @@ use PAMI\Listener\IEventListener;
 use PAMI\Client\Exception\ClientException;
 use PAMI\Client\IClient;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\NullLogger;
 
-class ClientImpl implements IClient
+class ClientImpl implements IClient, LoggerAwareInterface
 {
     /**
      * PSR-3 logger.
      * @var Logger
      */
-    private $logger;
+    protected $logger;
 
     /**
      * Hostname
@@ -255,7 +256,7 @@ class ClientImpl implements IClient
                 
                 $response = $this->messageToResponse($aMsg);
                 
-                $this->getLogger()->debug(
+                $this->logger->debug(
                     sprintf('recv <-- class: "%s": "%s"', get_class($response), $response)
                 );
                 
@@ -265,7 +266,7 @@ class ClientImpl implements IClient
                 
                 $event = $this->messageToEvent($aMsg);
                 
-                $this->getLogger()->debug(
+                $this->logger->debug(
                     sprintf('recv <-- class: "%s": "%s"', get_class($event), $event)
                 );
 
@@ -283,7 +284,7 @@ class ClientImpl implements IClient
                 $bMsg .= 'ActionId: ' . $this->lastActionId . "\r\n" . $aMsg;
                 $event = $this->messageToEvent($bMsg);
                 
-                $this->getLogger()->error(
+                $this->logger->error(
                     sprintf('broken recv <-- raw: "%s"', $aMsg)
                 );
                 
@@ -449,16 +450,6 @@ class ClientImpl implements IClient
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
-    }
-
-    /**
-     * Gets the logger.
-     *
-     * @return Psr\Log\LoggerInterface $logger The PSR3-Logger
-     */
-    public function getLogger()
-    {
-        return $this->logger;
     }
 
     /**
