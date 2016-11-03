@@ -159,10 +159,15 @@ class ClientImpl implements IClient, LoggerAwareInterface
         }
 
         $response = $this->send($msg);
+
         if (!$response->isSuccess()) {
-            throw new ClientException(
-                'Could not connect: ' . $response->getMessage()
+            $message = sprintf(
+                'Could not connect to: "%s", response: "%s"',
+                $this->getSocketUri(),
+                $response->getMessage()
             );
+            
+            throw new ClientException($message);
         }
         
         @stream_set_blocking($this->socket, 0);
@@ -216,7 +221,6 @@ class ClientImpl implements IClient, LoggerAwareInterface
         // Check if socket still open
         if (@feof($this->socket)) {
             $message = sprintf('EOF on socket: "%s"', $this->getSocketUri());
-            $this->logger->error($message);
             throw new ClientException($message);
         }
 
