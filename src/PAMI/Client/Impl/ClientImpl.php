@@ -211,18 +211,20 @@ class ClientImpl implements IClient, LoggerAwareInterface
      */
     protected function getMessages()
     {
-        $msgs = array();
+        $msgs = [];
+        
+        // Check if socket still open
+        if (@feof($this->socket)) {
+            $message = sprintf('EOF on socket: "%s"', $this->getSocketUri());
+            $this->logger->error($message);
+            throw new ClientException($message);
+        }
+
         // Read something.
         $read = @fread($this->socket, 65535);
         
         if ($read === false) {
             throw new ClientException(sprintf('Error fread socket: "%s"', $this->getSocketUri()));
-        }
-
-        if (@feof($this->socket)) {
-            $message = sprintf('EOF on socket: "%s"', $this->getSocketUri());
-            $this->logger->warning($message);
-            throw new ClientException($message);
         }
         
         $this->currentProcessingMessage .= $read;
