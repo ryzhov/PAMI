@@ -185,10 +185,19 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * @param mixed $listener
      * @param \Closure|null $predicate
      *
+     * @throws \PAMI\Client\Exception\ClientException
      * @return string
      */
     public function registerEventListener($listener, $predicate = null)
     {
+        if (null !== $predicate && !is_callable($predicate)) {
+            throw new ClientException(sprintf(
+                'Event listener: "%s" predicate must be callable type, this "%s" given',
+                get_class($listener),
+                gettype($predicate)
+            ));
+        }
+        
         $listenerId = uniqid('PamiListener');
         $this->eventListeners[$listenerId] = array($listener, $predicate);
         return $listenerId;
