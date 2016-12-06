@@ -27,6 +27,7 @@ class DialEndEvent extends EventMessage
                 'uniqueid',
                 'destchannel',
                 'destuniqueid',
+                'destaccountcode',
                 'dialstatus'
             ]
         );

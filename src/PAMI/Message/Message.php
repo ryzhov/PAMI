@@ -104,7 +104,7 @@ abstract class Message
      *
      * @return void
      */
-    protected function setKey($key, $value)
+    public function setKey($key, $value)
     {
         $key = strtolower((string)$key);
         $this->keys[$key] = (string)$value;

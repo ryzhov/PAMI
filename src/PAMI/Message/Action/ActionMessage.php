@@ -27,7 +27,7 @@ abstract class ActionMessage extends OutgoingMessage
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($actionId = null)
     {
         parent::__construct();
 
@@ -39,7 +39,7 @@ abstract class ActionMessage extends OutgoingMessage
             throw new \RuntimeException(sprintf('AMI Action invalid class: "%s"', get_class($this)));
         }
         
-        $this->setActionID(microtime(true));
+        $this->setActionID(isset($actionId) ? $actionId : microtime(true));
     }
 
     /**
