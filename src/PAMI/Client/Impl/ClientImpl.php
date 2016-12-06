@@ -441,7 +441,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
                 $read++;
             }
         }
-        throw new ClientException('Read timeout');
+        throw new ClientException(sprintf('Read timeout: "%d" exceeded', $this->rTimeout));
     }
 
     /**
