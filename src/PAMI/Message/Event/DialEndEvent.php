@@ -29,7 +29,8 @@ class DialEndEvent extends EventMessage
                 'destuniqueid',
                 'destaccountcode',
                 'dialstatus',
-                'destexten'
+                'destexten',
+                'destcalleridnum'
             ]
         );
     }
