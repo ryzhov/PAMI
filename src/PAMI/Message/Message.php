@@ -57,6 +57,42 @@ abstract class Message
     }
 
     /**
+     * Returns key: 'ActionId'.
+     *
+     * @return string
+     */
+    public function getActionId()
+    {
+        return $this->getKey('ActionId');
+    }
+
+    /**
+     * Sets Action Id.
+     *
+     * The ActionId can be at most 69 characters long, according to
+     * {@link https://issues.asterisk.org/jira/browse/14847 Asterisk Issue 14847}.
+     *
+     * Therefore we'll throw an exception when the ActionId is too long.
+     *
+     * @param $actionId The Action Id to have this action known by
+     *
+     * @return void
+     * @throws PAMIException When the ActionId is more then 69 characters long
+     */
+    public function setActionId($actionId)
+    {
+        if (0 == strlen($actionId)) {
+            throw new PAMIException('ActionId cannot be empty.');
+        }
+
+        if (strlen($actionId) > 69) {
+            throw new PAMIException('ActionId can be at most 69 characters long.');
+        }
+
+        $this->setKey('ActionId', $actionId);
+    }
+
+    /**
      * Returns created date.
      *
      * @return integer
@@ -192,16 +228,6 @@ abstract class Message
         }
         $mStr = $this->finishMessage(implode(self::EOL, $result));
         return $mStr;
-    }
-
-    /**
-     * Returns key: 'ActionID'.
-     *
-     * @return string
-     */
-    public function getActionID()
-    {
-        return $this->getKey('ActionID');
     }
 
     /**

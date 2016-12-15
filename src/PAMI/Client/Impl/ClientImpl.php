@@ -133,12 +133,12 @@ class ClientImpl implements IClient, LoggerAwareInterface
      */
     public function open()
     {
+        $errno = $errstr = null;
+        $socketUri = $this->getSocketUri();
+
         $this->context = stream_context_create();
-        $errno = 0;
-        $errstr = '';
-        
-        $this->socket = @stream_socket_client(
-            $this->getSocketUri(),
+        $this->socket = stream_socket_client(
+            $socketUri,
             $errno,
             $errstr,
             $this->cTimeout,
@@ -147,33 +147,31 @@ class ClientImpl implements IClient, LoggerAwareInterface
         );
         
         if ($this->socket === false) {
-            throw new ClientException(sprintf('Error: "%s" while connecting to: "%s"', $errstr, $this->getSocketUri()));
+            throw new ClientException(sprintf('error: "%s" while create socket', $errstr));
         }
         
         $msg = new LoginAction($this->user, $this->pass);
-        $asteriskId = @stream_get_line($this->socket, 1024, Message::EOL);
+        $asteriskId = stream_get_line($this->socket, 1024, Message::EOL);
+
+        if ($asteriskId === false) {
+            throw new ClientException(sprintf('error: "%s" while read socket', socket_strerror(socket_last_error())));
+        }
+        
         if (strstr($asteriskId, 'Asterisk') === false) {
-            throw new ClientException(
-                "Unknown peer. Is this an ami?: $asteriskId"
-            );
+            throw new ClientException(sprintf('Unknown peer: "%s"', $asteriskId));
         }
 
-        $response = $this->send($msg);
+        
+        $this->send($msg, function (ResponseMessage $response) use ($socketUri) {
+            if (!$response->isSuccess()) {
+                throw new ClientException(
+                    sprintf('Could not connect to: "%s", response: "%s"', $socketUri, $response->getMessage())
+                );
+            }
+        });
 
-        if (!$response->isSuccess()) {
-            $message = sprintf(
-                'Could not connect to: "%s", response: "%s"',
-                $this->getSocketUri(),
-                $response->getMessage()
-            );
-            
-            throw new ClientException($message);
-        }
-        
-        @stream_set_blocking($this->socket, 0);
-        
         $this->currentProcessingMessage = '';
-        $this->logger->debug(sprintf('Login to: "%s" by user: "%s"', $this->getSocketUri(), $this->user));
+        $this->logger->debug(sprintf('Login to: "%s" by user: "%s"', $socketUri, $this->user));
     }
 
     /**
@@ -228,16 +226,28 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $msgs = [];
         
         // Check if socket still open
-        if (@feof($this->socket)) {
-            $message = sprintf('EOF on socket: "%s"', $this->getSocketUri());
-            throw new ClientException($message);
+        //if (feof($this->socket)) {
+        //    throw new ClientException(sprintf('EOF on socket: "%s"', $this->getSocketUri()));
+        //}
+
+        if (!stream_set_blocking($this->socket, true)) {
+            throw new ClientException('error set socket block');
+        }
+
+        // set read timeout on socket
+        if (!stream_set_timeout($this->socket, $this->rTimeout)) {
+            throw new ClientException(
+                sprintf('socket "%s" timeout "%s" set error', $this->getSocketUri(), $this->rTimeout)
+            );
         }
 
         // Read something.
-        $read = @fread($this->socket, 65535);
+        $read = fread($this->socket, 2048);
         
+        $this->logger->debug(sprintf('socket_read <-- "%d" chars', strlen($read)));
+
         if ($read === false) {
-            throw new ClientException(sprintf('Error fread socket: "%s"', $this->getSocketUri()));
+            throw new ClientException(sprintf('error read socket: "%s"', $this->getSocketUri()));
         }
         
         $this->currentProcessingMessage .= $read;
@@ -274,8 +284,15 @@ class ClientImpl implements IClient, LoggerAwareInterface
                 $this->logger->debug(
                     sprintf('recv <-- class: "%s": "%s"', get_class($response), $response)
                 );
-                
-                $this->incomingQueue[$response->getActionId()] = $response;
+               
+                if (isset($this->incomingQueue[$response->getActionId()])) {
+                    $callback = $this->incomingQueue[$response->getActionId()];
+                    if (is_callable($callback)) {
+                        $this->lastActionId = false;
+                        unset($this->incomingQueue[$response->getActionId()]);
+                        $callback($response);
+                    }
+                }
                 
             } elseif ($evePos !== false) {
                 
@@ -394,7 +411,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
     protected function getRelated(OutgoingMessage $message)
     {
         $ret = false;
-        $id = $message->getActionID('ActionID');
+        $id = $message->getActionID();
         if (isset($this->incomingQueue[$id])) {
             $response = $this->incomingQueue[$id];
             if ($response->isComplete()) {
@@ -404,7 +421,21 @@ class ClientImpl implements IClient, LoggerAwareInterface
         }
         return $ret;
     }
-
+    
+    protected function socket_write($string)
+    {
+        for ($written = 0; $written < strlen($string); $written += $write) {
+            $write = fwrite($this->socket, substr($string, $written));
+            if ($write === false) {
+                throw new ClientException(
+                    sprintf('error: "%s" while write socket', socket_strerror(socket_last_error()))
+                );
+            }
+        }
+        
+        return true;
+    }
+    
     /**
      * Sends a message to ami.
      *
@@ -414,34 +445,30 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * @throws \PAMI\Client\Exception\ClientException
      * @return \PAMI\Message\Response\ResponseMessage
      */
-    public function send(OutgoingMessage $message)
+    public function send(OutgoingMessage $message, \Closure $p)
     {
         $this->logger->debug(sprintf('send --> class: "%s": "%s"', get_class($message), $message));
         
         $messageToSend = $message->serialize();
-        $length = strlen($messageToSend);
-        
         $this->lastActionId = $message->getActionId();
+        $this->incomingQueue[$this->lastActionId] = $p;
+            
+        $this->socket_write($messageToSend);
+        $this->process();
         
-        if (@fwrite($this->socket, $messageToSend) < $length) {
-            throw new ClientException('Could not send message');
+        /*
+        $response = $this->getRelated($message);
+        
+        if (!$response) {
+            throw new ClientException(
+                sprintf('read response for "%s" actionID timeout %d sec over', $this->lastActionId, $this->rTimeout)
+            );
         }
         
-        $read = 0;
-        
-        while ($read <= $this->rTimeout) {
-            $this->process();
-            $response = $this->getRelated($message);
-            if ($response != false) {
-                $this->lastActionId = false;
-                return $response;
-            }
-            usleep(1000); // 1ms delay
-            if ($this->rTimeout > 0) {
-                $read++;
-            }
-        }
-        throw new ClientException(sprintf('Read timeout: "%d" exceeded', $this->rTimeout));
+        $this->lastActionId = false;
+        return $response;
+         * 
+         */
     }
 
     /**

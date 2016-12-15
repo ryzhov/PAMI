@@ -24,7 +24,11 @@ abstract class AbstractMessage extends Message implements MessageKeysAware
         }
         
         if (!in_array($key = strtolower($matches[2]), static::getMessageKeys())) {
-            throw new PAMIException(sprintf('unsupported key "%s" for message class "%s"', $key, get_class($this)));
+            throw new PAMIException(sprintf('unsupported key "%s" for message class "%s" in "%s" method call',
+                $key,
+                get_class($this),
+                $name
+            ));
         }
 
         if ($matches[1] === 'set') {

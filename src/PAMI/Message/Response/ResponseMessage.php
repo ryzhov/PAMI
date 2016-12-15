@@ -29,7 +29,6 @@
  */
 namespace PAMI\Message\Response;
 
-use PAMI\Message\Message;
 use PAMI\Message\IncomingMessage;
 use PAMI\Message\Event\EventMessage;
 
@@ -145,19 +144,6 @@ class ResponseMessage extends IncomingMessage
     public function getMessage()
     {
         return $this->getKey('Message');
-    }
-
-    /**
-     * Sets an action id. This should not be necessary, but asterisk sometimes
-     * decides to not send the Response: or Event: headers.
-     *
-     * @param string $actionId New ActionId.
-     *
-     * @return void
-     */
-    public function setActionId($actionId)
-    {
-        $this->setKey('ActionId', $actionId);
     }
 
     /**

@@ -101,7 +101,7 @@ interface IClient
      * @throws \PAMI\Client\Exception\ClientException
      * @return \PAMI\Message\Response\ResponseMessage
      */
-    public function send(OutgoingMessage $message);
+    public function send(OutgoingMessage $message, \Closure $p);
 
     /**
      * Sets the logger implementation.
