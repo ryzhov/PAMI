@@ -96,10 +96,10 @@ interface IClient
      * Sends a message to ami.
      *
      * @param OutgoingMessage $message Message to send.
+     * @param \Closure $p Callback executed when correspond response received
      *
-     * @see ClientImpl::send()
      * @throws \PAMI\Client\Exception\ClientException
-     * @return \PAMI\Message\Response\ResponseMessage
+     * @return void
      */
     public function send(OutgoingMessage $message, \Closure $p);
 

@@ -5,7 +5,6 @@
  * @author     Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
  * @author     Marcelo Gornstein <marcelog@gmail.com>
  * @link       https://github.com/ryzhov/PAMI
- * 
  */
 
 declare(ticks=1);
@@ -100,8 +99,8 @@ class ClientImpl implements IClient, LoggerAwareInterface
     private $eventListeners;
 
     /**
-     * The receiving queue.
-     * @var IncomingMessage[]
+     * The callbacks queue for asyncronous response.
+     * @var \Closure[]
      */
     private $incomingQueue;
 
@@ -111,14 +110,6 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * @var string
      */
     private $currentProcessingMessage;
-
-    /**
-     * This should not happen. Asterisk may send responses without a
-     * corresponding ActionId.
-     * @var string
-     */
-    private $lastActionId;
-
 
     private function getSocketUri()
     {
@@ -147,10 +138,21 @@ class ClientImpl implements IClient, LoggerAwareInterface
         );
         
         if ($this->socket === false) {
-            throw new ClientException(sprintf('error: "%s" while create socket', $errstr));
+            throw new ClientException(sprintf('error: "%s" while create socket "%s"', $errstr, $socketUri));
         }
         
-        $msg = new LoginAction($this->user, $this->pass);
+        // set socket in block mode
+        if (!stream_set_blocking($this->socket, true)) {
+            throw new ClientException(sprintf('error set block mode on "%s" socket', $socketUri));
+        }
+
+        // set read timeout on socket
+        if (!stream_set_timeout($this->socket, $this->rTimeout)) {
+            throw new ClientException(
+                sprintf('socket "%s" timeout "%s" set error', $socketUri, $this->rTimeout)
+            );
+        }
+
         $asteriskId = stream_get_line($this->socket, 1024, Message::EOL);
 
         if ($asteriskId === false) {
@@ -161,7 +163,9 @@ class ClientImpl implements IClient, LoggerAwareInterface
             throw new ClientException(sprintf('Unknown peer: "%s"', $asteriskId));
         }
 
+        $this->logger->debug(sprintf('recv <-- asteriskId: "%s"', $asteriskId));
         
+        $msg = new LoginAction($this->user, $this->pass);
         $this->send($msg, function (ResponseMessage $response) use ($socketUri) {
             if (!$response->isSuccess()) {
                 throw new ClientException(
@@ -171,7 +175,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
         });
 
         $this->currentProcessingMessage = '';
-        $this->logger->debug(sprintf('Login to: "%s" by user: "%s"', $socketUri, $this->user));
+        $this->logger->info(sprintf('Login to: "%s" by user: "%s"', $socketUri, $this->user));
     }
 
     /**
@@ -225,27 +229,9 @@ class ClientImpl implements IClient, LoggerAwareInterface
     {
         $msgs = [];
         
-        // Check if socket still open
-        //if (feof($this->socket)) {
-        //    throw new ClientException(sprintf('EOF on socket: "%s"', $this->getSocketUri()));
-        //}
-
-        if (!stream_set_blocking($this->socket, true)) {
-            throw new ClientException('error set socket block');
-        }
-
-        // set read timeout on socket
-        if (!stream_set_timeout($this->socket, $this->rTimeout)) {
-            throw new ClientException(
-                sprintf('socket "%s" timeout "%s" set error', $this->getSocketUri(), $this->rTimeout)
-            );
-        }
-
         // Read something.
         $read = fread($this->socket, 2048);
         
-        $this->logger->debug(sprintf('socket_read <-- "%d" chars', strlen($read)));
-
         if ($read === false) {
             throw new ClientException(sprintf('error read socket: "%s"', $this->getSocketUri()));
         }
@@ -284,12 +270,12 @@ class ClientImpl implements IClient, LoggerAwareInterface
                 $this->logger->debug(
                     sprintf('recv <-- class: "%s": "%s"', get_class($response), $response)
                 );
+                $actionId = $response->getActionId();
                
-                if (isset($this->incomingQueue[$response->getActionId()])) {
-                    $callback = $this->incomingQueue[$response->getActionId()];
+                if (isset($this->incomingQueue[$actionId])) {
+                    $callback = $this->incomingQueue[$actionId];
                     if (is_callable($callback)) {
-                        $this->lastActionId = false;
-                        unset($this->incomingQueue[$response->getActionId()]);
+                        unset($this->incomingQueue[$actionId]);
                         $callback($response);
                     }
                 }
@@ -301,45 +287,18 @@ class ClientImpl implements IClient, LoggerAwareInterface
                 $this->logger->debug(
                     sprintf('recv <-- class: "%s": "%s"', get_class($event), $event)
                 );
-
-                $response = $this->findResponse($event);
-                if ($response === false || $response->isComplete()) {
-                    $this->dispatch($event);
-                } else {
-                    $response->addEvent($event);
-                }
+                
+                $this->dispatch($event);
                 
             } else {
                 // broken ami.. sending a response with events without
                 // Event and ActionId
-                $bMsg = 'Event: ResponseEvent' . "\r\n";
-                $bMsg .= 'ActionId: ' . $this->lastActionId . "\r\n" . $aMsg;
-                $event = $this->messageToEvent($bMsg);
                 
                 $this->logger->error(
                     sprintf('broken recv <-- raw: "%s"', $aMsg)
                 );
-                
-                $response = $this->findResponse($event);
-                $response->addEvent($event);
             }
         }
-    }
-
-    /**
-     * Tries to find an associated response for the given message.
-     *
-     * @param IncomingMessage $message Message sent by asterisk.
-     *
-     * @return \PAMI\Message\Response\ResponseMessage
-     */
-    protected function findResponse(IncomingMessage $message)
-    {
-        $actionId = $message->getActionId();
-        if (isset($this->incomingQueue[$actionId])) {
-            return $this->incomingQueue[$actionId];
-        }
-        return false;
     }
 
     /**
@@ -377,10 +336,8 @@ class ClientImpl implements IClient, LoggerAwareInterface
     private function messageToResponse($msg)
     {
         $response = new ResponseMessage($msg);
-        $actionId = $response->getActionId();
-        if (is_null($actionId)) {
-            $actionId = $this->lastActionId;
-            $response->setActionId($this->lastActionId);
+        if (null === $response->getActionId()) {
+            throw new ClientException(sprintf('response "%s" without actionId', $response));
         }
         return $response;
     }
@@ -394,34 +351,9 @@ class ClientImpl implements IClient, LoggerAwareInterface
      */
     private function messageToEvent($msg)
     {
-        $event = $this->eventFactory->createFromRaw($msg);
-
-
-        return $event;
+        return $this->eventFactory->createFromRaw($msg);
     }
 
-    /**
-     * Returns a message (response) related to the given message. This uses
-     * the ActionID tag (key).
-     *
-     * @todo not suitable for multithreaded applications.
-     *
-     * @return \PAMI\Message\IncomingMessage
-     */
-    protected function getRelated(OutgoingMessage $message)
-    {
-        $ret = false;
-        $id = $message->getActionID();
-        if (isset($this->incomingQueue[$id])) {
-            $response = $this->incomingQueue[$id];
-            if ($response->isComplete()) {
-                unset($this->incomingQueue[$id]);
-                $ret = $response;
-            }
-        }
-        return $ret;
-    }
-    
     protected function socket_write($string)
     {
         for ($written = 0; $written < strlen($string); $written += $write) {
@@ -437,38 +369,32 @@ class ClientImpl implements IClient, LoggerAwareInterface
     }
     
     /**
-     * Sends a message to ami.
+     * Sends a message to ami asyncronously.
      *
      * @param \PAMI\Message\OutgoingMessage $message Message to send.
+     * @param \Closure $p Callback executed when correspond response received
      *
-     * @see ClientImpl::send()
      * @throws \PAMI\Client\Exception\ClientException
-     * @return \PAMI\Message\Response\ResponseMessage
+     * @return void
      */
     public function send(OutgoingMessage $message, \Closure $p)
     {
+        $actionId = $message->getActionId();
+        
+        if (null === $actionId) {
+            throw new ClientException(
+                sprintf('send message "%s" of class "%s" without actionId', $message, get_class($message))
+            );
+        }
+
         $this->logger->debug(sprintf('send --> class: "%s": "%s"', get_class($message), $message));
         
         $messageToSend = $message->serialize();
-        $this->lastActionId = $message->getActionId();
-        $this->incomingQueue[$this->lastActionId] = $p;
+
+        $this->incomingQueue[$actionId] = $p;
             
         $this->socket_write($messageToSend);
         $this->process();
-        
-        /*
-        $response = $this->getRelated($message);
-        
-        if (!$response) {
-            throw new ClientException(
-                sprintf('read response for "%s" actionID timeout %d sec over', $this->lastActionId, $this->rTimeout)
-            );
-        }
-        
-        $this->lastActionId = false;
-        return $response;
-         * 
-         */
     }
 
     /**
@@ -478,8 +404,8 @@ class ClientImpl implements IClient, LoggerAwareInterface
      */
     public function close()
     {
-        $this->logger->debug('Closing connection to asterisk.');
-        @stream_socket_shutdown($this->socket, STREAM_SHUT_RDWR);
+        $this->logger->info(sprintf('Closing "%s" AMI connection.', $this->getSocketUri()));
+        stream_socket_shutdown($this->socket, STREAM_SHUT_RDWR);
     }
 
     /**
@@ -523,6 +449,5 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $this->eventFactory = new EventFactoryImpl();
         $this->incomingQueue = [];
         $this->eventListeners = [];
-        $this->lastActionId = false;
     }
 }
