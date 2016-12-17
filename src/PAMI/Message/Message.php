@@ -226,6 +226,7 @@ abstract class Message
                 $result[] = $this->serializeVariable($k, $v);
             }
         }
+        
         $mStr = $this->finishMessage(implode(self::EOL, $result));
         return $mStr;
     }
