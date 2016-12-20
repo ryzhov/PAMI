@@ -276,10 +276,6 @@ class ClientImpl implements IClient, LoggerAwareInterface
                     $callback = $this->incomingQueue[$actionId];
                     if (is_callable($callback)) {
                         unset($this->incomingQueue[$actionId]);
-                        $this->logger->debug(
-                            sprintf('do callback for class: "%s", actionid: "%s"', get_class($response), $actionId)
-                        );
-
                         $callback($response);
                     } else {
                         $this->logger->warning(sprintf('callback: "%s" not callable', gettype($callback)));
