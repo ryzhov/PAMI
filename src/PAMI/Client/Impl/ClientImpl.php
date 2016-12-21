@@ -116,18 +116,13 @@ class ClientImpl implements IClient, LoggerAwareInterface
         return sprintf('%s%s:%s', $this->scheme, $this->host, $this->port);
     }
 
-    /**
-     * Opens a tcp connection to ami.
-     *
-     * @throws \PAMI\Client\Exception\ClientException
-     * @return void
-     */
-    public function open()
+    protected function connect()
     {
         $errno = $errstr = null;
         $socketUri = $this->getSocketUri();
 
         $this->context = stream_context_create();
+        
         $this->socket = stream_socket_client(
             $socketUri,
             $errno,
@@ -152,6 +147,18 @@ class ClientImpl implements IClient, LoggerAwareInterface
                 sprintf('socket "%s" timeout "%s" set error', $socketUri, $this->rTimeout)
             );
         }
+    }
+
+    /**
+     * Opens a tcp connection to ami.
+     *
+     * @throws \PAMI\Client\Exception\ClientException
+     * @return void
+     */
+    public function open()
+    {
+        $this->connect();
+        $socketUri = $this->getSocketUri();
 
         $asteriskId = stream_get_line($this->socket, 1024, Message::EOL);
 
@@ -166,6 +173,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $this->logger->debug(sprintf('recv <-- asteriskId: "%s"', $asteriskId));
         
         $msg = new LoginAction($this->user, $this->pass);
+
         $this->send($msg, function (ResponseMessage $response) use ($socketUri) {
             if (!$response->isSuccess()) {
                 throw new ClientException(
@@ -385,8 +393,11 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $actionId = $message->getActionId();
         
         if (null === $actionId) {
-            throw new ClientException(
-                sprintf('send message "%s" of class "%s" without actionId', $message, get_class($message))
+            $actionId = bin2hex(random_bytes(8));
+            $message->setActionId($actionId);
+            
+            $this->logger->debug(
+                sprintf('set actionId: "%s" on message of class "%s"', $actionId, get_class($message))
             );
         }
 
@@ -395,6 +406,12 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $messageToSend = $message->serialize();
 
         $this->incomingQueue[$actionId] = $p;
+        
+        if (feof($this->socket)) {
+            //handle socket error or closed
+            $this->logger->debug(sprintf('socket "%s" closed or error, try reconnect', $this->getSocketUri()));
+            $this->connect();
+        }
             
         $this->socket_write($messageToSend);
         $this->process();

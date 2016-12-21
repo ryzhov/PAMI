@@ -36,6 +36,5 @@ abstract class ActionMessage extends OutgoingMessage
             throw new \RuntimeException(sprintf('AMI Action invalid class: "%s"', get_class($this)));
         }
         
-        $this->setActionId(bin2hex(random_bytes(8)));
     }
 }
