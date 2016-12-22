@@ -408,9 +408,10 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $this->incomingQueue[$actionId] = $p;
         
         if (feof($this->socket)) {
-            //handle socket error or closed
-            $this->logger->debug(sprintf('socket "%s" closed or error, try reconnect', $this->getSocketUri()));
-            $this->connect();
+            // -- socket error or closed --
+            throw new ClientException(
+                sprintf('socket "%s" error or closed', $this->getSocketUri())
+            );
         }
             
         $this->socket_write($messageToSend);
