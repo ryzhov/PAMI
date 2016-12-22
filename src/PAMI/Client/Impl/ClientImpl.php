@@ -19,6 +19,10 @@ use PAMI\Message\Response\ResponseMessage;
 use PAMI\Message\Event\Factory\Impl\EventFactoryImpl;
 use PAMI\Listener\IEventListener;
 use PAMI\Client\Exception\ClientException;
+use PAMI\Client\Exception\SocketException;
+use PAMI\Client\Exception\EofSocketException;
+use PAMI\Client\Exception\ReadSocketException;
+use PAMI\Client\Exception\WriteSocketException;
 use PAMI\Client\IClient;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
@@ -116,6 +120,9 @@ class ClientImpl implements IClient, LoggerAwareInterface
         return sprintf('%s%s:%s', $this->scheme, $this->host, $this->port);
     }
 
+    /**
+     * @throws SocketException
+     */
     protected function connect()
     {
         $errno = $errstr = null;
@@ -133,26 +140,27 @@ class ClientImpl implements IClient, LoggerAwareInterface
         );
         
         if ($this->socket === false) {
-            throw new ClientException(sprintf('error: "%s" while create socket "%s"', $errstr, $socketUri));
+            throw new SocketException(sprintf('error: "%s" while create socket "%s"', $errstr, $socketUri));
         }
         
         // set socket in block mode
         if (!stream_set_blocking($this->socket, true)) {
-            throw new ClientException(sprintf('error set block mode on "%s" socket', $socketUri));
+            throw new SocketException(sprintf('error set block mode on "%s" socket', $socketUri));
         }
 
         // set read timeout on socket
         if (!stream_set_timeout($this->socket, $this->rTimeout)) {
-            throw new ClientException(
+            throw new SocketException(
                 sprintf('socket "%s" timeout "%s" set error', $socketUri, $this->rTimeout)
             );
         }
     }
 
     /**
-     * Opens a tcp connection to ami.
+     * Opens a connection to ami.
      *
-     * @throws \PAMI\Client\Exception\ClientException
+     * @throws ClientException
+     * @throws ReadSocketException
      * @return void
      */
     public function open()
@@ -163,7 +171,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
         $asteriskId = stream_get_line($this->socket, 1024, Message::EOL);
 
         if ($asteriskId === false) {
-            throw new ClientException(sprintf('error: "%s" while read socket', socket_strerror(socket_last_error())));
+            throw new ReadSocketException(sprintf('error: "%s" while read socket', socket_strerror(socket_last_error())));
         }
         
         if (strstr($asteriskId, 'Asterisk') === false) {
@@ -195,7 +203,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * @param mixed $listener
      * @param \Closure|null $predicate
      *
-     * @throws \PAMI\Client\Exception\ClientException
+     * @throws ClientException
      * @return string
      */
     public function registerEventListener($listener, $predicate = null)
@@ -229,19 +237,15 @@ class ClientImpl implements IClient, LoggerAwareInterface
 
     /**
      * Reads a complete message over the stream until EOM.
-     *
-     * @throws ClientException
      * @return \string[]
      */
-    protected function getMessages()
+    protected function readMessages()
     {
         $msgs = [];
         
         // Read something.
-        $read = fread($this->socket, 2048);
-        
-        if ($read === false) {
-            throw new ClientException(sprintf('error read socket: "%s"', $this->getSocketUri()));
+        if (false === $read = fread($this->socket, 2048)) {
+            return false;
         }
         
         $this->currentProcessingMessage .= $read;
@@ -255,6 +259,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
             );
             $msgs[] = $msg;
         }
+
         return $msgs;
     }
 
@@ -262,11 +267,17 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * Main processing loop. Also called from send(), you should call this in
      * your own application in order to continue reading events and responses
      * from ami.
+     * 
+     * @throws ReadSocketException
      */
     public function process()
     {
-        $msgs = $this->getMessages();
-        
+        $msgs = $this->readMessages();
+ 
+        if ($msgs === false) {
+            throw new ReadSocketException(sprintf('error read socket: "%s"', $this->getSocketUri()));
+        }
+       
         foreach ($msgs as $aMsg) {
             $resPos = strpos($aMsg, 'Response:');
             $evePos = strpos($aMsg, 'Event:');
@@ -365,14 +376,16 @@ class ClientImpl implements IClient, LoggerAwareInterface
         return $this->eventFactory->createFromRaw($msg);
     }
 
+    /**
+     * @param string $string String for write to socket
+     * @return boolean true on success, false otherwise
+     */
     protected function socket_write($string)
     {
         for ($written = 0; $written < strlen($string); $written += $write) {
             $write = fwrite($this->socket, substr($string, $written));
             if ($write === false) {
-                throw new ClientException(
-                    sprintf('error: "%s" while write socket', socket_strerror(socket_last_error()))
-                );
+                return false;
             }
         }
         
@@ -385,7 +398,8 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * @param \PAMI\Message\OutgoingMessage $message Message to send.
      * @param \Closure $p Callback executed when correspond response received
      *
-     * @throws \PAMI\Client\Exception\ClientException
+     * @throws EofSocketException
+     * @throws WriteSocketException
      * @return void
      */
     public function send(OutgoingMessage $message, \Closure $p)
@@ -409,13 +423,19 @@ class ClientImpl implements IClient, LoggerAwareInterface
         
         if (feof($this->socket)) {
             // -- socket error or closed --
-            throw new ClientException(
-                sprintf('socket "%s" error or closed', $this->getSocketUri())
-            );
+            throw new EofSocketException(sprintf(
+                'socket "%s" feof=true, last error "%s"',
+                $this->getSocketUri()),
+                socket_strerror(socket_last_error()
+            ));
         }
             
-        $this->socket_write($messageToSend);
-        $this->process();
+        if (!$this->socket_write($messageToSend)) {
+            // -- data not writen on socket --
+            throw new WriteSocketException(sprintf('error "%s" while socket write', socket_strerror(socket_last_error())));
+        }
+
+        //$this->process();
     }
 
     /**
