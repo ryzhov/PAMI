@@ -425,8 +425,8 @@ class ClientImpl implements IClient, LoggerAwareInterface
             // -- socket error or closed --
             throw new EofSocketException(sprintf(
                 'socket "%s" feof=true, last error "%s"',
-                $this->getSocketUri()),
-                socket_strerror(socket_last_error()
+                $this->getSocketUri(),
+                socket_strerror(socket_last_error())
             ));
         }
             
