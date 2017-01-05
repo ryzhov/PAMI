@@ -27,7 +27,8 @@ class HangupEvent extends EventMessage
                 'calleridname',
                 'uniqueid',
                 'cause',
-                'causetext'
+                'causetext',
+                'accountcode'
             ]
         );
     }
