@@ -46,6 +46,14 @@ use Psr\Log\NullLogger;
  */
 interface IClient
 {
+
+    /**
+     * Gets the socket.
+     *
+     * @return resource
+     */
+    public function getSocket();
+
     /**
      * Opens a tcp connection to ami.
      *

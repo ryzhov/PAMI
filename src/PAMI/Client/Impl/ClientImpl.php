@@ -201,14 +201,19 @@ class ClientImpl implements IClient, LoggerAwareInterface
      * an optional predicate to invoke before calling the callback.
      *
      * @param mixed $listener
-     * @param \Closure|null $predicate
+     * @param \Closure|array|null $predicate
      *
      * @throws ClientException
      * @return string
      */
     public function registerEventListener($listener, $predicate = null)
     {
-        if (null !== $predicate && !is_callable($predicate)) {
+        if (is_array($predicate) && !is_callable($predicate)) {
+            $events = $predicate;
+            $predicate = function(IncomingMessage $event) use ($events) {
+                return count($events) ? in_array(get_class($event), $events) : true;
+            };
+        } elseif (null !== $predicate && !is_callable($predicate)) {
             throw new ClientException(sprintf(
                 'Event listener: "%s" predicate must be callable type, this "%s" given',
                 get_class($listener),
@@ -462,7 +467,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
     }
 
     /**
-     * Gets the sockekt.
+     * Gets the socket.
      *
      * @return resource
      */
