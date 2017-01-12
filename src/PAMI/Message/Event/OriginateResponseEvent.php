@@ -3,145 +3,101 @@
  * Response from an async originate.
  *
  * PHP Version 5
- *
- * @category   Pami
- * @package    Message
- * @subpackage Event
- * @author     Marcelo Gornstein <marcelog@gmail.com>
- * @license    http://marcelog.github.com/PAMI/ Apache License 2.0
- * @version    SVN: $Id$
- * @link       http://marcelog.github.com/PAMI/
- *
- * Copyright 2011 Marcelo Gornstein <marcelog@gmail.com>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
  */
+
 namespace PAMI\Message\Event;
 
 use PAMI\Message\Event\EventMessage;
 
-/**
- * Response from an async originate.
- *
- * PHP Version 5
- *
- * @category   Pami
- * @package    Message
- * @subpackage Event
- * @author     Marcelo Gornstein <marcelog@gmail.com>
- * @license    http://marcelog.github.com/PAMI/ Apache License 2.0
- * @link       http://marcelog.github.com/PAMI/
- */
 class OriginateResponseEvent extends EventMessage
 {
     /**
-     * Returns key: 'Privilege'.
+     * Returns key: 'privilege'.
      *
      * @return string
      */
     public function getPrivilege()
     {
-        return $this->getKey('Privilege');
+        return $this->getKey('privilege');
     }
 
     /**
-     * Returns key: 'Exten'.
+     * Returns key: 'exten'.
      *
      * @return string
      */
     public function getExten()
     {
-        return $this->getKey('Exten');
+        return $this->getKey('exten');
     }
 
     /**
-     * Returns key: 'Context'.
+     * Returns key: 'context'.
      *
      * @return string
      */
     public function getContext()
     {
-        return $this->getKey('Context');
+        return $this->getKey('context');
     }
 
     /**
-     * Returns key: 'Channel'.
+     * Returns key: 'channel'.
      *
      * @return string
      */
     public function getChannel()
     {
-        return $this->getKey('Channel');
+        return $this->getKey('channel');
     }
 
     /**
-     * Returns key: 'Reason'.
+     * Returns key: 'reason'.
      *
      * @return string
      */
     public function getReason()
     {
-        return $this->getKey('Reason');
+        return $this->getKey('reason');
     }
 
     /**
-     * Returns key: 'UniqueID'.
+     * Returns key: 'uniqueid'.
      *
      * @return string
      */
-    public function getUniqueID()
+    public function getUniqueId()
     {
-        return $this->getKey('UniqueID');
+        return $this->getKey('uniqueid');
     }
 
     /**
-     * Returns key: 'ActionID'.
-     *
-     * @return string
-     */
-    public function getActionID()
-    {
-        return $this->getKey('ActionID');
-    }
-
-    /**
-     * Returns key: 'Response'.
+     * Returns key: 'response'.
      *
      * @return string
      */
     public function getResponse()
     {
-        return $this->getKey('Response');
+        return $this->getKey('response');
     }
 
     /**
-     * Returns key: 'CallerIdNum'.
+     * Returns key: 'calleridnum'.
      *
      * @return string
      */
     public function getCallerIdNum()
     {
-        return $this->getKey('CallerIdNum');
+        return $this->getKey('calleridnum');
     }
 
     /**
-     * Returns key: 'CallerIdName'.
+     * Returns key: 'calleridname'.
      *
      * @return string
      */
     public function getCallerIdName()
     {
-        return $this->getKey('CallerIdName');
+        return $this->getKey('calleridname');
     }
 }

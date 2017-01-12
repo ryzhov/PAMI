@@ -36,19 +36,13 @@ abstract class Message
     protected $keys;
 
     /**
-     * Created date (unix timestamp).
-     * @var integer
-     */
-    protected $createdDate;
-
-    /**
      * Serialize function.
      *
      * @return string[]
      */
     public function __sleep()
     {
-        return ['variables', 'keys', 'createdDate'];
+        return ['variables', 'keys'];
     }
 
     public function __toString()
@@ -63,7 +57,7 @@ abstract class Message
      */
     public function getActionId()
     {
-        return $this->getKey('ActionId');
+        return $this->getKey('actionid');
     }
 
     /**
@@ -89,17 +83,7 @@ abstract class Message
             throw new PAMIException('ActionId can be at most 69 characters long.');
         }
 
-        $this->setKey('ActionId', $actionId);
-    }
-
-    /**
-     * Returns created date.
-     *
-     * @return integer
-     */
-    public function getCreatedDate()
-    {
-        return $this->createdDate;
+        $this->setKey('actionid', $actionId);
     }
 
     /**
@@ -108,12 +92,12 @@ abstract class Message
      * @param string $key   Variable name.
      * @param string $value Variable value.
      *
-     * @return void
+     * @return Message
      */
     public function setVariable($key, $value)
     {
-        $key = strtolower($key);
         $this->variables[$key] = $value;
+        return $this;
     }
 
     /**
@@ -121,15 +105,11 @@ abstract class Message
      *
      * @param string $key Variable name.
      *
-     * @return string
+     * @return string|null
      */
     public function getVariable($key)
     {
-        $key = strtolower($key);
-        if (!isset($this->variables[$key])) {
-            return null;
-        }
-        return $this->variables[$key];
+        return isset($this->variables[$key]) ? $this->variables[$key] : null;
     }
 
     /**
@@ -138,12 +118,12 @@ abstract class Message
      * @param string $key   Key name (i.e: Action).
      * @param string $value Key value.
      *
-     * @return void
+     * @return Message
      */
     public function setKey($key, $value)
     {
-        $key = strtolower((string)$key);
         $this->keys[$key] = (string)$value;
+        return $this;
     }
 
     /**
@@ -151,15 +131,11 @@ abstract class Message
      *
      * @param string $key Key name (i.e: Action).
      *
-     * @return string
+     * @return string|null
      */
     public function getKey($key)
     {
-        $key = strtolower($key);
-        if (!isset($this->keys[$key])) {
-            return null;
-        }
-        return (string)$this->keys[$key];
+        return isset($this->keys[$key]) ? (string)$this->keys[$key] : null;
     }
 
     /**
@@ -232,6 +208,29 @@ abstract class Message
     }
 
     /**
+     * Gives a array representation of this message 
+     * @return array
+     */
+    public function toArray()
+    {
+        $result = [];
+        
+        if (count($this->getVariables())) {
+            $result['vars'] = [];
+        }
+
+        foreach ($this->getKeys() as $key => $value) {
+            $result[$key] = $value;
+        }
+        
+        foreach ($this->getVariables() as $key => $value) {
+            $result['vars'][$key] = $value;
+        }
+
+        return $result;
+    }
+
+    /**
      * Constructor.
      *
      * @return void
@@ -240,6 +239,5 @@ abstract class Message
     {
         $this->variables = [];
         $this->keys = [];
-        $this->createdDate = time();
     }
 }
