@@ -219,11 +219,11 @@ abstract class Message
             $result['vars'] = [];
         }
 
-        foreach ($this->getKeys() as $key => $value) {
+        foreach ($this->keys as $key => $value) {
             $result[$key] = $value;
         }
         
-        foreach ($this->getVariables() as $key => $value) {
+        foreach ($this->variables as $key => $value) {
             $result['vars'][$key] = $value;
         }
 
