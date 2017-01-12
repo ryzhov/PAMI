@@ -115,7 +115,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
      */
     private $currentProcessingMessage;
 
-    private function getSocketUri()
+    public function getSocketUri()
     {
         return sprintf('%s%s:%s', $this->scheme, $this->host, $this->port);
     }
@@ -141,11 +141,15 @@ class ClientImpl implements IClient, LoggerAwareInterface
         
         if ($this->socket === false) {
             throw new SocketException(sprintf('error: "%s" while create socket "%s"', $errstr, $socketUri));
+        } else {
+            $this->logger->debug(sprintf('ami socket "%s" connected, cTimeout => [%d]', $socketUri, $this->cTimeout));
         }
         
         // set socket in block mode
         if (!stream_set_blocking($this->socket, true)) {
             throw new SocketException(sprintf('error set block mode on "%s" socket', $socketUri));
+        } else {
+            $this->logger->debug(sprintf('ami socket "%s" set in blocking mode', $socketUri));
         }
 
         // set read timeout on socket
@@ -153,6 +157,8 @@ class ClientImpl implements IClient, LoggerAwareInterface
             throw new SocketException(
                 sprintf('socket "%s" timeout "%s" set error', $socketUri, $this->rTimeout)
             );
+        } else {
+            $this->logger->debug(sprintf('ami socket "%s" set rTimeout => [%d]', $socketUri, $this->rTimeout));
         }
     }
 
@@ -191,7 +197,7 @@ class ClientImpl implements IClient, LoggerAwareInterface
         });
 
         $this->currentProcessingMessage = '';
-        $this->logger->info(sprintf('Login to: "%s" by user: "%s"', $socketUri, $this->user));
+        $this->logger->info(sprintf('login to: "%s" as user: "%s"', $socketUri, $this->user));
     }
 
     /**

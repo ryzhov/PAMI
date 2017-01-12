@@ -55,6 +55,14 @@ interface IClient
     public function getSocket();
 
     /**
+     * Gets the socket URI.
+     *
+     * @return string socket URI
+     */
+    public function getSocketUri();
+
+
+    /**
      * Opens a tcp connection to ami.
      *
      * @throws \PAMI\Client\Exception\ClientException
