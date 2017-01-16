@@ -78,7 +78,7 @@ abstract class IncomingMessage extends AbstractMessage
      */
     public function getEventList()
     {
-        return $this->getKey('EventList');
+        return $this->getKey('eventlist');
     }
 
     /**
