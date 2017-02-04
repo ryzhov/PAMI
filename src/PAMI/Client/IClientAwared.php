@@ -2,10 +2,9 @@
 /**
  * Interface for awared of ami client.
  *
- * @category Pami
  * @package  Client
  * @author   Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
- *
+ * @link     https://github.com/ryzhov/PAMI
  */
 namespace PAMI\Client;
 

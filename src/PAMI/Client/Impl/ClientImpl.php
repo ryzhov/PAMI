@@ -2,9 +2,10 @@
 /**
  * TCP Client implementation for AMI.
  *
- * @author     Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
- * @author     Marcelo Gornstein <marcelog@gmail.com>
- * @link       https://github.com/ryzhov/PAMI
+ * @package  Client
+ * @author   Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
+ * @author   Marcelo Gornstein <marcelog@gmail.com>
+ * @link     https://github.com/ryzhov/PAMI
  */
 
 declare(ticks=1);

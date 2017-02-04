@@ -8,8 +8,7 @@
   "authors": [
     {
       "name": "Aleksandr N. Ryzhov",
-      "email": "a.n.ryzhov@gmail.com",
-      "role": "Developer"
+      "email": "a.n.ryzhov@gmail.com"
     }
   ],
   "autoload": {

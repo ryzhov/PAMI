@@ -5,7 +5,6 @@
  * @author     Aleksandr N. Ryzhov <a.n.ryzhov@gmail.com>
  * @author     Marcelo Gornstein <marcelog@gmail.com>
  * @link       https://github.com/ryzhov/PAMI
- * 
  */
 
 namespace PAMI\Message;
