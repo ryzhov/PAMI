@@ -7,14 +7,8 @@ PAMI means PHP Asterisk Manager Interface. As its name suggests its just a
 set of php classes that will let you issue commands to an ami and/or receive
 events, using an observer-listener pattern.
 
-
-# Resources
-
- * [API](http://pami.readthedocs.org/en/latest/ApiIndex/)
- * [Complete PAGI/PAMI talk for the PHP Conference Argentina 2013](http://www.slideshare.net/mgornstein/phpconf-2013). Check the slide notes for the complete text :)
-
-
 # Installing
+
 Add this library to your [Composer](https://packagist.org/) configuration. In
 composer.json:
 ```json
@@ -24,7 +18,6 @@ composer.json:
 ```
 
 # QuickStart
-
 
 ```php
 // Make sure you include the composer autoload.
@@ -77,22 +70,9 @@ $pami->setLogger($logger);
 
 By default, the client will use the [NullLogger](http://www.php-fig.org/psr/psr-3/#1-4-helper-classes-and-interfaces).
 
-# Developers
-This project uses [phing](https://www.phing.info/). Current tasks include:
- * test: Runs [PHPUnit](https://phpunit.de/).
- * cs: Runs [CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer).
- * doc: Runs [PhpDocumentor](http://www.phpdoc.org/).
- * md: runs [PHPMD](http://phpmd.org/).
- * build: This is the default task, and will run all the other tasks.
-
-## Running a phing task
-To run a task, just do:
-
-```sh
-vendor/bin/phing build
-```
-
 # Thanks To
+
+* Marcelo Gornstein <marcelog@gmail.com>
 
 * Jason Blank <rumpled at github> for helping in the debugging of the queue
 functionality and some other ami inconsistencies.
